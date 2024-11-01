@@ -13,6 +13,133 @@
   </style>
 </head>
 <body>
-hey
+  <canvas id="gameCanvas" width="480" height="320"></canvas>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // Load the hen image
+    const henImg = new Image();
+    henImg.src = "https://via.placeholder.com/30x30.png?text=Hen"; // replace with actual hen image URL
+
+    // Hen settings
+    const henRadius = 15; // Adjust according to the image size
+    let henX = canvas.width / 2;
+    let henY = canvas.height - 60;
+    let henDX = 2;
+    let henDY = -2;
+
+    // Paddle settings
+    const paddleHeight = 10;
+    const paddleWidth = 75;
+    let paddleX = (canvas.width - paddleWidth) / 2;
+
+    // Beehives (Bricks) settings
+    const hiveRowCount = 3;
+    const hiveColumnCount = 5;
+    const hiveWidth = 75;
+    const hiveHeight = 20;
+    const hivePadding = 10;
+    const hiveOffsetTop = 30;
+    const hiveOffsetLeft = 30;
+
+    const hives = [];
+    for (let c = 0; c < hiveColumnCount; c++) {
+      hives[c] = [];
+      for (let r = 0; r < hiveRowCount; r++) {
+        hives[c][r] = { x: 0, y: 0, status: 1 };
+      }
+    }
+
+    // Touch controls for mobile
+    let touchX = null;
+    canvas.addEventListener("touchstart", (e) => touchX = e.touches[0].clientX);
+    canvas.addEventListener("touchmove", (e) => {
+      if (touchX) {
+        let deltaX = e.touches[0].clientX - touchX;
+        paddleX += deltaX;
+        touchX = e.touches[0].clientX;
+      }
+    });
+    canvas.addEventListener("touchend", () => touchX = null);
+
+    // Collision Detection
+    function collisionDetection() {
+      for (let c = 0; c < hiveColumnCount; c++) {
+        for (let r = 0; r < hiveRowCount; r++) {
+          const hive = hives[c][r];
+          if (hive.status === 1) {
+            if (
+              henX > hive.x &&
+              henX < hive.x + hiveWidth &&
+              henY > hive.y &&
+              henY < hive.y + hiveHeight
+            ) {
+              henDY = -henDY;
+              hive.status = 0;
+            }
+          }
+        }
+      }
+    }
+
+    function drawHen() {
+      ctx.drawImage(henImg, henX - henRadius, henY - henRadius, henRadius * 2, henRadius * 2);
+    }
+
+    function drawPaddle() {
+      ctx.beginPath();
+      ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
+      ctx.fillStyle = "#008080";
+      ctx.fill();
+      ctx.closePath();
+    }
+
+    function drawHives() {
+      for (let c = 0; c < hiveColumnCount; c++) {
+        for (let r = 0; r < hiveRowCount; r++) {
+          if (hives[c][r].status === 1) {
+            const hiveX = c * (hiveWidth + hivePadding) + hiveOffsetLeft;
+            const hiveY = r * (hiveHeight + hivePadding) + hiveOffsetTop;
+            hives[c][r].x = hiveX;
+            hives[c][r].y = hiveY;
+            ctx.beginPath();
+            ctx.rect(hiveX, hiveY, hiveWidth, hiveHeight);
+            ctx.fillStyle = "#DAA520";
+            ctx.fill();
+            ctx.closePath();
+          }
+        }
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawHives();
+      drawHen();
+      drawPaddle();
+      collisionDetection();
+
+      if (henX + henDX > canvas.width - henRadius || henX + henDX < henRadius) {
+        henDX = -henDX;
+      }
+      if (henY + henDY < henRadius) {
+        henDY = -henDY;
+      } else if (henY + henDY > canvas.height - henRadius) {
+        if (henX > paddleX && henX < paddleX + paddleWidth) {
+          henDY = -henDY;
+        } else {
+          document.location.reload();
+        }
+      }
+
+      henX += henDX;
+      henY += henDY;
+
+      requestAnimationFrame(draw);
+    }
+
+    draw();
+  </script>
 </body>
 </html>
